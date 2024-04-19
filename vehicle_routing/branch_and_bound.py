@@ -1,3 +1,4 @@
+import heapq
 import itertools
 import sys
 import time
@@ -7,6 +8,9 @@ class Node:
         self.path = path
         self.cost = cost
         self.lower_bound = lower_bound
+
+    def __lt__(self, other):
+        return self.lower_bound < other.lower_bound
 
 def calculate_cost(graph, path):
     cost = 0
@@ -21,10 +25,11 @@ def branch_and_bound_vrp(graph, num_vehicles):
     num_nodes = len(graph)
     best_solution = sys.maxsize
     initial_path = [0]
-    queue = [Node(initial_path, 0, 0)]
+    initial_lower_bound = calculate_lower_bound(graph, initial_path)
+    queue = [(initial_lower_bound, Node(initial_path, 0, initial_lower_bound))]
 
     while queue:
-        node = queue.pop(0)
+        _, node = heapq.heappop(queue)
         if len(node.path) == num_nodes:
             # Nó representa uma solução completa
             cost = node.cost + graph[node.path[-1]][0]  # Custos do último cliente de volta ao depósito
@@ -39,7 +44,7 @@ def branch_and_bound_vrp(graph, num_vehicles):
                 child_cost = calculate_cost(graph, child_path)
                 child_lower_bound = calculate_lower_bound(graph, child_path)
                 if child_lower_bound < best_solution:
-                    queue.append(Node(child_path, child_cost, child_lower_bound))
+                    heapq.heappush(queue, (child_lower_bound, Node(child_path, child_cost, child_lower_bound)))
 
     return best_solution, best_path
 
