@@ -1,44 +1,74 @@
-from itertools import permutations
+import itertools
+import time
 
-def calcular_custo_rota(rota, distancias):
+def calcular_custo_rota(graph, rota):
     custo = 0
     for i in range(len(rota) - 1):
-        cidade_atual = rota[i]
-        proxima_cidade = rota[i + 1]
-        custo += distancias[cidade_atual][proxima_cidade]
+        custo += graph[rota[i]][rota[i+1]]
     return custo
 
-def VRP_Solver(n_vertices, distancias, capacidade_veiculo):
-    menor_custo = float('inf')
-    melhor_rota = None
+def calcular_custo_total(graph, rotas):
+    custo_total = 0
+    for rota in rotas:
+        custo_total += calcular_custo_rota(graph, rota)
+    return custo_total
 
-    # Gerar todas as permutações das cidades para as rotas dos veículos
-    cidades = list(range(1, n_vertices))
-    rotas_possiveis = permutations(cidades)
+def forca_bruta_vrp(graph, capacidade_veiculo, num_veiculos):
+    num_clientes = len(graph) - 1  
+    clientes = list(range(1, num_clientes + 1))
 
-    # Calcular custo para cada rota e selecionar a melhor
-    for rota in rotas_possiveis:
-        rota = [0] + list(rota) + [0]  # Adicionar o depósito no início e no fim da rota
-        custo_rota = calcular_custo_rota(rota, distancias)
+    melhor_custo = float('inf')
+    melhor_rota = []
 
-        if custo_rota < menor_custo:
-            menor_custo = custo_rota
-            melhor_rota = rota
+    start_time = time.time()
 
-    return melhor_rota, menor_custo
+    # Gerar todas as permutações possíveis das rotas dos veículos
+    for permutacao in itertools.permutations(clientes):
+        rotas = [[] for _ in range(num_veiculos)]
+        capacidade_atual = [capacidade_veiculo] * num_veiculos
+        cliente_idx = 0
 
-# Exemplo de uso:
-if __name__ == "__main__":
-    n_vertices = 5  # Número de vértices (cidades)
-    distancias = [
-        [0, 10, 15, 20, 25],  # Distâncias da cidade 0 para as outras cidades
-        [10, 0, 35, 25, 30],  # Distâncias da cidade 1 para as outras cidades
-        [15, 35, 0, 30, 10],  # Distâncias da cidade 2 para as outras cidades
-        [20, 25, 30, 0, 5],   # Distâncias da cidade 3 para as outras cidades
-        [25, 30, 10, 5, 0]    # Distâncias da cidade 4 para as outras cidades
-    ]
-    capacidade_veiculo = 100  # Capacidade do veículo
+        for cliente in permutacao:
+            for i in range(num_veiculos):
+                if capacidade_atual[i] >= graph[0][cliente]:
+                    rotas[i].append(cliente)
+                    capacidade_atual[i] -= graph[0][cliente]
+                    break
 
-    melhor_rota, menor_custo = VRP_Solver(n_vertices, distancias, capacidade_veiculo)
-    print("Melhor rota:", melhor_rota)
-    print("Menor custo:", menor_custo)
+        for i in range(num_veiculos):
+            rotas[i].insert(0, 0)  
+            rotas[i].append(0)     
+
+        custo_total = calcular_custo_total(graph, rotas)
+
+        if custo_total < melhor_custo:
+            melhor_custo = custo_total
+            melhor_rota = rotas
+
+    end_time = time.time()
+
+    execution_time = end_time - start_time
+
+    return melhor_custo, melhor_rota, execution_time
+
+graph = [
+    [0, 5, 8, 7, 10, 8, 6, 5, 6, 7],
+    [5, 0, 7, 6, 8, 6, 4, 3, 4, 5],
+    [8, 7, 0, 6, 7, 6, 4, 6, 5, 6],
+    [7, 6, 6, 0, 6, 5, 4, 5, 4, 5],
+    [10, 8, 7, 6, 0, 3, 4, 5, 6, 7],
+    [8, 6, 6, 5, 3, 0, 2, 3, 4, 5],
+    [6, 4, 4, 4, 4, 2, 0, 2, 3, 4],
+    [5, 3, 6, 5, 5, 3, 2, 0, 2, 3],
+    [6, 4, 5, 4, 6, 4, 3, 2, 0, 2],
+    [7, 5, 6, 5, 7, 5, 4, 3, 2, 0]
+]
+
+capacidade_veiculo = 17
+num_veiculos = 6  
+
+melhor_custo, melhor_rota, execution_time = forca_bruta_vrp(graph, capacidade_veiculo, num_veiculos)
+
+print("Melhor custo encontrado:", melhor_custo)
+print("Melhor rota encontrada:", melhor_rota)
+print("Tempo de execução:", execution_time, "segundos")

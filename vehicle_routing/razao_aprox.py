@@ -1,13 +1,14 @@
 import random
 import copy
 import time
+from itertools import permutations
 
 class VRPSolution:
     def __init__(self, routes):
         self.routes = routes
         self.cost = self.calculate_cost()
 
-    def calculate_cost(self):
+    def calculate_cost(self, graph):
         cost = 0
         for route in self.routes:
             for i in range(len(route) - 1):
@@ -95,10 +96,18 @@ for num_customers in num_customers_list:
         graph = generate_random_graph(num_customers)
         
         # Executar algoritmo de busca tabu
-        best_solution, execution_time = tabu_search(graph, num_vehicles, max_iterations, tabu_size)
+        best_solution_tabu, execution_time_tabu = tabu_search(graph, num_vehicles, max_iterations, tabu_size)
+        
+        # Executar algoritmo exato para obter a solução ótima
+        melhor_rota, menor_custo, execution_time = VRP_Solver(num_customers, graph, 100, num_vehicles)
+        
+        # Calcular a razão de aproximação
+        approx_ratio = best_solution_tabu.cost / menor_custo
         
         # Resultados
-        print("Melhor custo encontrado:", best_solution.cost)
-        print("Melhor rota encontrada:", best_solution.routes)
-        print("Tempo de execução:", execution_time, "segundos")
+        print("Melhor custo encontrado pelo algoritmo de busca tabu:", best_solution_tabu.cost)
+        print("Melhor rota encontrada pelo algoritmo de busca tabu:", best_solution_tabu.routes)
+        print("Custo da solução ótima encontrada pelo algoritmo exato:", menor_custo)
+        print("Razão de aproximação:", approx_ratio)
+        print("Tempo de execução do algoritmo de busca tabu:", execution_time_tabu, "segundos")
         print()
